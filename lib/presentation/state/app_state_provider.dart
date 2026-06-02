@@ -3,19 +3,23 @@ import '../../data/models/carousel_item_model.dart';
 import '../../data/models/message_model.dart';
 import '../../data/models/event_model.dart';
 import '../../data/models/notification_model.dart';
+import '../../data/models/prayer_time_model.dart';
 import '../../data/repositories/messaging_repository.dart';
 import '../../data/repositories/event_repository.dart';
 import '../../data/repositories/notification_repository.dart';
+import '../../data/repositories/prayer_timings_repository.dart';
 
 class AppStateProvider extends ChangeNotifier {
   final MessagingRepository _messagingRepository;
   final EventRepository _eventRepository;
   final NotificationRepository _notificationRepository;
+  final PrayerRepository _prayerRepository;
 
   List<CarouselItem> _carouselItems = [];
   List<Message> _messages = [];
   List<Event> _events = [];
   List<AppNotification> _notifications = [];
+  List<PrayerTime> _prayerTimings = [];
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -24,14 +28,17 @@ class AppStateProvider extends ChangeNotifier {
     required MessagingRepository messagingRepository,
     required EventRepository eventRepository,
     required NotificationRepository notificationRepository,
+    required PrayerRepository prayerRepository,
   })  : _messagingRepository = messagingRepository,
         _eventRepository = eventRepository,
-        _notificationRepository = notificationRepository;
+        _notificationRepository = notificationRepository,
+        _prayerRepository = prayerRepository;
 
   List<CarouselItem> get carouselItems => _carouselItems;
   List<Message> get messages => _messages;
   List<Event> get events => _events;
   List<AppNotification> get notifications => _notifications;
+  List<PrayerTime> get prayerTimings => _prayerTimings;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -51,12 +58,14 @@ class AppStateProvider extends ChangeNotifier {
         _messagingRepository.getLatestMessages(),
         _eventRepository.getUpcomingEvents(),
         _notificationRepository.getNotifications(),
+        _prayerRepository.getPrayerTimings(),
       ]);
 
       _carouselItems = results[0] as List<CarouselItem>;
       _messages = results[1] as List<Message>;
       _events = results[2] as List<Event>;
       _notifications = results[3] as List<AppNotification>;
+      _prayerTimings = results[4] as List<PrayerTime>;
 
       _isLoading = false;
       notifyListeners();

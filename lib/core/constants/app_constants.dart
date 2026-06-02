@@ -1,16 +1,23 @@
 class AppConstants {
   static const String appName = 'Community Hub';
 
-  // Organization Information
-  static const String orgName = 'Green Community Organization';
-  static const String orgAddress = '123 Faith & Community Blvd, Green Hills, GH 94025';
-  static const String orgPhone = '+1 (234) 567-890';
-  static const String orgPhoneRaw = '+1234567890';
-  static const String orgEmail = 'info@greencommunity.org';
+  // API Configuration
+  // Use only apex host because some mobile DNS networks fail on `www`.
+  static const List<String> apiBaseUrls = [
+    'https://masjidomarmoorpark.com',
+  ];
+  static const String baseApiUrl = 'https://masjidomarmoorpark.com';
 
-  // Map Coordinates (Googleplex for demonstration)
-  static const double orgLatitude = 37.4220;
-  static const double orgLongitude = -122.0841;
+  // Organization Information
+  static const String orgName = 'Masjid Omar Muhammad Moorpark';
+  static const String orgAddress = '702 Walnut Street, Moorpark, CA 93021';
+  static const String orgPhone = '(805) 304 5940 WhatsApp';
+  static const String orgPhoneRaw = '+18053045940';
+  static const String orgEmail = '8053045940@tmobile.com';
+
+  // Map Coordinates
+  static const double orgLatitude = 34.2818;
+  static const double orgLongitude = -118.8741;
 
   // External URLs
   static const String googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=$orgLatitude,$orgLongitude';

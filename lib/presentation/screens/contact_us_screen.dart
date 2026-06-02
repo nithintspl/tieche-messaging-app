@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_constants.dart';
-import '../widgets/info_card.dart';
 
 class ContactUsScreen extends StatelessWidget {
   final bool isTab;
@@ -15,7 +14,12 @@ class ContactUsScreen extends StatelessWidget {
     final Uri url = Uri.parse(urlString);
     try {
       if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: urlString.startsWith('http') ? LaunchMode.externalApplication : LaunchMode.platformDefault);
+        await launchUrl(
+          url,
+          mode: urlString.startsWith('http')
+              ? LaunchMode.externalApplication
+              : LaunchMode.platformDefault,
+        );
       } else {
         throw 'Could not launch $urlString';
       }
@@ -31,203 +35,416 @@ class ContactUsScreen extends StatelessWidget {
     }
   }
 
+  Widget _buildContactItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String content,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              icon,
+              color: Colors.green.shade600,
+              size: 28,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    content,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHourRow(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWide = screenWidth > 720;
 
-    final content = ListView(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      children: [
-        // Header Banner
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    final contactDetailsCard = Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withOpacity(0.12),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              AppConstants.orgName,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.primary.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 24),
+            _buildContactItem(
+              context,
+              icon: Icons.location_on,
+              title: 'Address',
+              content: AppConstants.orgAddress,
+              onTap: () => _launchUrl(context, AppConstants.googleMapsUrl),
+            ),
+            const Divider(height: 24),
+            _buildContactItem(
+              context,
+              icon: Icons.phone,
+              title: 'Phone',
+              content: AppConstants.orgPhone,
+              onTap: () => _launchUrl(context, AppConstants.telUrl),
+            ),
+            const Divider(height: 24),
+            _buildContactItem(
+              context,
+              icon: Icons.email,
+              title: 'Email',
+              content: AppConstants.orgEmail,
+              onTap: () => _launchUrl(context, AppConstants.emailUrl),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final hoursCard = Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withOpacity(0.12),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(
-                  'Get in Touch',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Icon(
+                  Icons.access_time_outlined,
+                  color: Colors.green.shade600,
+                  size: 28,
                 ),
-                SizedBox(height: 8),
+                const SizedBox(width: 12),
                 Text(
-                  'Have questions, feedback, or need support? Reaching out is just a tap away.',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        
-        const SizedBox(height: 12),
-
-        // 1. Address Card
-        InfoCard(
-          icon: Icons.location_on_outlined,
-          title: 'Organization Address',
-          content: AppConstants.orgAddress,
-          actionText: 'Get Directions',
-          onTap: () => _launchUrl(context, AppConstants.googleMapsUrl),
-        ),
-
-        // 2. Phone Card
-        InfoCard(
-          icon: Icons.phone_outlined,
-          title: 'Contact Phone Number',
-          content: AppConstants.orgPhone,
-          actionText: 'Call Now',
-          onTap: () => _launchUrl(context, AppConstants.telUrl),
-        ),
-
-        // 3. Email Card
-        InfoCard(
-          icon: Icons.email_outlined,
-          title: 'Email Address',
-          content: AppConstants.orgEmail,
-          actionText: 'Send Email',
-          onTap: () => _launchUrl(context, AppConstants.emailUrl),
-        ),
-
-        // 4. Map Card Layout
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 8),
-                child: Text(
-                  'Location Map',
+                  'Hours of Operation',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+              ],
+            ),
+            const Divider(height: 24),
+            Text(
+              'Administrative Office',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
               ),
-              Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(0.12),
-                    width: 1,
+            ),
+            const SizedBox(height: 8),
+            _buildHourRow(context, 'Monday - Friday', '9:00 AM - 5:00 PM'),
+            _buildHourRow(context, 'Saturday - Sunday', 'Closed'),
+            const SizedBox(height: 20),
+            Text(
+              'Congregational Prayers',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildHourRow(context, 'Daily Prayers', 'Open for all 5 daily prayers'),
+            _buildHourRow(context, 'Jummah (Friday)', 'Iqama at 1:40 PM'),
+          ],
+        ),
+      ),
+    );
+
+    final mapCard = Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withOpacity(0.12),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _launchUrl(context, AppConstants.googleMapsUrl),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                AspectRatio(
+                  aspectRatio: isWide ? (16 / 10) : (16 / 9),
+                  child: Image.network(
+                    'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&auto=format&fit=crop&q=60',
+                    fit: BoxFit.cover,
                   ),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () => _launchUrl(context, AppConstants.googleMapsUrl),
+                // Center Marker (Red Pin with 702 label)
+                Positioned(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Interactive map image mockup
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          AspectRatio(
-                            aspectRatio: 16 / 9,
-                            child: Image.network(
-                              'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&auto=format&fit=crop&q=60',
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          // Custom Map Marker Overlay
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.9),
-                              shape: BoxShape.circle,
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.location_pin,
-                              color: theme.colorScheme.primary,
-                              size: 40,
-                            ),
-                          ),
-                          // Pulse ripple effect graphic
-                          Positioned(
-                            bottom: 12,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.7),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.map, color: Colors.white, size: 14),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Tap to Open in Google Maps',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              AppConstants.orgName,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Coordinates: ${AppConstants.orgLatitude}, ${AppConstants.orgLongitude}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.outline,
-                              ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 4,
                             ),
                           ],
                         ),
+                        child: const Text(
+                          '702',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.location_pin,
+                        color: Colors.red,
+                        size: 40,
                       ),
                     ],
                   ),
                 ),
+                // Top-left Google Map Info Card
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    width: 220,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '702 Walnut St',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                '702 Walnut St, Moorpark, CA 93021',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.open_in_new,
+                          color: Colors.blue.shade600,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade600,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.directions,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Location Map',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Coordinates: ${AppConstants.orgLatitude}, ${AppConstants.orgLongitude}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final content = ListView(
+      padding: const EdgeInsets.only(bottom: 32),
+      children: [
+        // Centered Header matching screenshot
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Text(
+              //   'Contact Us',
+              //   style: theme.textTheme.headlineMedium?.copyWith(
+              //     fontWeight: FontWeight.bold,
+              //     color: theme.colorScheme.onSurface,
+              //   ),
+              //   textAlign: TextAlign.center,
+              // ),
+              // const SizedBox(height: 8),
+              Text(
+                'Get in touch with us for any questions or inquiries',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
+
+        if (isWide)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: Column(
+                    children: [
+                      contactDetailsCard,
+                      const SizedBox(height: 16),
+                      hoursCard,
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  flex: 5,
+                  child: mapCard,
+                ),
+              ],
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              children: [
+                contactDetailsCard,
+                const SizedBox(height: 16),
+                hoursCard,
+                const SizedBox(height: 16),
+                mapCard,
+              ],
+            ),
+          ),
       ],
     );
 

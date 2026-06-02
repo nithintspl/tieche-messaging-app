@@ -8,6 +8,7 @@ import 'data/repositories/auth_repository.dart';
 import 'data/repositories/messaging_repository.dart';
 import 'data/repositories/event_repository.dart';
 import 'data/repositories/notification_repository.dart';
+import 'data/repositories/prayer_timings_repository.dart';
 import 'presentation/state/auth_provider.dart';
 import 'presentation/state/app_state_provider.dart';
 
@@ -19,9 +20,10 @@ void main() async {
 
   // Initialize Repositories
   final authRepository = MockAuthRepository(localStorageService);
-  final messagingRepository = MockMessagingRepository();
-  final eventRepository = MockEventRepository();
+  final messagingRepository = HttpMessagingRepository();
+  final eventRepository = HttpEventRepository();
   final notificationRepository = MockNotificationRepository(localStorageService);
+  final prayerRepository = HttpPrayerRepository();
 
   runApp(
     MultiProvider(
@@ -32,6 +34,7 @@ void main() async {
         Provider<MessagingRepository>.value(value: messagingRepository),
         Provider<EventRepository>.value(value: eventRepository),
         Provider<NotificationRepository>.value(value: notificationRepository),
+        Provider<PrayerRepository>.value(value: prayerRepository),
 
         // ChangeNotifierProviders for State Management
         ChangeNotifierProvider<AuthProvider>(
@@ -42,6 +45,7 @@ void main() async {
             messagingRepository: messagingRepository,
             eventRepository: eventRepository,
             notificationRepository: notificationRepository,
+            prayerRepository: prayerRepository,
           ),
         ),
       ],

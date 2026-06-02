@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_constants.dart';
 import '../models/carousel_item_model.dart';
 import '../models/message_model.dart';
 
@@ -58,5 +61,98 @@ class MockMessagingRepository implements MessagingRepository {
         imageUrl: 'https://images.unsplash.com/photo-1443674900473-117c7ad9d5be?w=800&auto=format&fit=crop&q=60',
       ),
     ];
+  }
+}
+
+class HttpMessagingRepository implements MessagingRepository {
+  final http.Client _client;
+
+  HttpMessagingRepository({http.Client? client}) : _client = client ?? http.Client();
+
+  Future<MapEntry<Uri, http.Response>> _getWithHostFallback(String endpoint) async {
+    final attemptedUrls = <Uri>[];
+    Object? lastError;
+
+    for (final baseUrl in AppConstants.apiBaseUrls) {
+      final url = Uri.parse('$baseUrl$endpoint');
+      attemptedUrls.add(url);
+      try {
+        final response = await _client.get(url).timeout(const Duration(seconds: 12));
+        if (response.statusCode == 200) {
+          return MapEntry(url, response);
+        }
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    throw Exception(
+      'Network error: Failed to connect. Attempted: ${attemptedUrls.join(', ')}'
+      '${lastError != null ? ' - $lastError' : ''}',
+    );
+  }
+
+  @override
+  Future<List<CarouselItem>> getCarouselItems() async {
+    try {
+      final responseEntry = await _getWithHostFallback('/api/home/carousel');
+      final response = responseEntry.value;
+
+      if (response.statusCode == 200) {
+        final dynamic decoded = json.decode(response.body);
+
+        // Handle double-nested list [[...]] or single list [...]
+        List<dynamic> listData;
+        if (decoded is List) {
+          if (decoded.isNotEmpty && decoded.first is List) {
+            listData = decoded.first as List<dynamic>;
+          } else {
+            listData = decoded;
+          }
+        } else {
+          throw Exception('Invalid response format: expected a JSON list');
+        }
+
+        return listData
+            .map((jsonItem) => CarouselItem.fromJson(jsonItem as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception('Failed to load carousel items (Status Code: ${response.statusCode})');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  @override
+  Future<List<Message>> getLatestMessages() async {
+    try {
+      final responseEntry = await _getWithHostFallback('/api/home/messages');
+      final response = responseEntry.value;
+
+      if (response.statusCode == 200) {
+        final dynamic decoded = json.decode(response.body);
+
+        // Handle double-nested list [[...]] or single list [...]
+        List<dynamic> listData;
+        if (decoded is List) {
+          if (decoded.isNotEmpty && decoded.first is List) {
+            listData = decoded.first as List<dynamic>;
+          } else {
+            listData = decoded;
+          }
+        } else {
+          throw Exception('Invalid response format: expected a JSON list');
+        }
+
+        return listData
+            .map((jsonItem) => Message.fromJson(jsonItem as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception('Failed to load messages (Status Code: ${response.statusCode})');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
+    }
   }
 }

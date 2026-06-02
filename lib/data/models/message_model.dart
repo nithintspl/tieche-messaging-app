@@ -16,8 +16,42 @@ class Message {
   });
 
   factory Message.fromJson(Map<String, dynamic> json) {
+    if (json.containsKey('body') && json.containsKey('createdAt')) {
+      final body = json['body'] as String;
+      final id = json['id'].toString();
+      final date = DateTime.parse(json['createdAt'] as String);
+
+      // Infer title based on content
+      String title = 'Announcement';
+      final bodyUpper = body.toUpperCase();
+      if (bodyUpper.contains('TAFSEER')) {
+        title = 'Tafseer ul Quran Sessions';
+      } else if (bodyUpper.contains('WHATSAPP') || bodyUpper.contains('SMS')) {
+        title = 'Masjid WhatsApp Group Signup';
+      } else if (bodyUpper.contains('JUMMA') || bodyUpper.contains('IQAMA')) {
+        title = 'Jumma Salaat Iqama Notice';
+      } else {
+        // Fallback: Use the first few words or first sentence
+        final firstSentence = body.split(RegExp(r'[.\n]')).first.trim();
+        if (firstSentence.isNotEmpty) {
+          title = firstSentence.length > 40
+              ? '${firstSentence.substring(0, 37)}...'
+              : firstSentence;
+        }
+      }
+
+      return Message(
+        id: id,
+        title: title,
+        shortDescription: body,
+        content: body,
+        date: date,
+        imageUrl: null,
+      );
+    }
+
     return Message(
-      id: json['id'] as String,
+      id: json['id'].toString(),
       title: json['title'] as String,
       shortDescription: json['shortDescription'] as String,
       content: json['content'] as String,

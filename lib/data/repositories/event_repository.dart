@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_constants.dart';
 import '../models/event_model.dart';
 
 abstract class EventRepository {
@@ -37,5 +40,63 @@ class MockEventRepository implements EventRepository {
         imageUrl: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop&q=60',
       ),
     ];
+  }
+}
+
+class HttpEventRepository implements EventRepository {
+  final http.Client _client;
+
+  HttpEventRepository({http.Client? client}) : _client = client ?? http.Client();
+
+  Future<http.Response> _getWithHostFallback(String endpoint) async {
+    Object? lastError;
+
+    for (final baseUrl in AppConstants.apiBaseUrls) {
+      final url = Uri.parse('$baseUrl$endpoint');
+      try {
+        final response = await _client.get(url).timeout(const Duration(seconds: 12));
+        if (response.statusCode == 200) {
+          return response;
+        }
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    throw Exception(
+      'Network error: Failed to connect to events endpoint'
+      '${lastError != null ? ' - $lastError' : ''}',
+    );
+  }
+
+  @override
+  Future<List<Event>> getUpcomingEvents() async {
+    try {
+      final response = await _getWithHostFallback('/api/home/events');
+
+      if (response.statusCode == 200) {
+        final dynamic decoded = json.decode(response.body);
+
+        // Handle double-nested list [[...]] or single list [...]
+        List<dynamic> listData;
+        if (decoded is List) {
+          if (decoded.isNotEmpty && decoded.first is List) {
+            listData = decoded.first as List<dynamic>;
+          } else {
+            listData = decoded;
+          }
+        } else {
+          throw Exception('Invalid response format: expected a JSON list');
+        }
+
+        return listData
+            .map((jsonItem) => Event.fromJson(jsonItem as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception('Failed to load events (Status Code: ${response.statusCode})');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
+    }
   }
 }

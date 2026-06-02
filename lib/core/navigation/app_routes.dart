@@ -6,6 +6,7 @@ import '../../presentation/screens/message_details_screen.dart';
 import '../../presentation/screens/event_details_screen.dart';
 import '../../presentation/screens/contact_us_screen.dart';
 import '../../presentation/screens/login_screen.dart';
+import '../../presentation/screens/prayer_timings_screen.dart';
 import '../../data/models/message_model.dart';
 import '../../data/models/event_model.dart';
 
@@ -17,6 +18,7 @@ class AppRoutes {
   static const String eventDetails = '/event-details';
   static const String contactUs = '/contact-us';
   static const String login = '/login';
+  static const String prayerTimings = '/prayer-timings';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -40,6 +42,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const ContactUsScreen());
       case login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
+      case prayerTimings:
+        return MaterialPageRoute(builder: (_) => const PrayerTimingsScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

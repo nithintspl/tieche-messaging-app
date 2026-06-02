@@ -6,6 +6,8 @@ import '../../core/navigation/app_routes.dart';
 import '../widgets/custom_carousel.dart';
 import '../widgets/message_card.dart';
 import '../widgets/event_card.dart';
+import '../widgets/prayer_timings_card.dart';
+import '../../data/models/prayer_time_model.dart';
 import 'contact_us_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -32,74 +34,64 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        // Place notification icon on the top-left corner
-        leading: Stack(
-          alignment: Alignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined, size: 28),
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.notifications);
-              },
-            ),
-            if (appState.unreadNotificationCount > 0)
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: Text(
-                    appState.unreadNotificationCount.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+        leading: _currentTab == 1
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  setState(() {
+                    _currentTab = 0;
+                  });
+                },
+              )
+            : null,
+        title: _currentTab == 1
+            ? const Text('Contact Us')
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.spa_rounded, color: theme.colorScheme.primary, size: 24),
+                  const SizedBox(width: 8),
+                  const Text('Community Hub'),
+                ],
+              ),
+        actions: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, size: 28),
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRoutes.notifications);
+                },
+              ),
+              if (appState.unreadNotificationCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
                     ),
-                    textAlign: TextAlign.center,
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      appState.unreadNotificationCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
-              ),
-          ],
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.spa_rounded, color: theme.colorScheme.primary, size: 24),
-            const SizedBox(width: 8),
-            const Text('Community Hub'),
-          ],
-        ),
-        actions: [
-          // App Bar action buttons
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _currentTab = 1; // Switch to Contact Us tab
-              });
-            },
-            child: const Text('Contact Us'),
+            ],
           ),
-          if (authProvider.isAuthenticated)
-            TextButton(
-              onPressed: () => _handleLogout(context, authProvider),
-              child: const Text('Logout'),
-            )
-          else
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.login);
-              },
-              child: const Text('Login'),
-            ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
         ],
       ),
       drawer: Drawer(
@@ -170,30 +162,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.pushNamed(context, AppRoutes.login);
                 },
               ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.access_time_outlined),
+              title: const Text('Daily Jammat Timings'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, AppRoutes.prayerTimings);
+              },
+            ),
           ],
         ),
       ),
       body: tabs[_currentTab],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentTab,
-        onTap: (index) {
-          setState(() {
-            _currentTab = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.contact_support_outlined),
-            activeIcon: Icon(Icons.contact_support),
-            label: 'Contact Us',
-          ),
-        ],
-      ),
     );
   }
 

@@ -23,5 +23,5 @@ class AppConstants {
   // External URLs
   static const String googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=$orgLatitude,$orgLongitude';
   static const String telUrl = 'tel:$orgPhoneRaw';
-  static const String emailUrl = 'mailto:$orgEmail?subject=Inquiry%20from%20Community%20App';
+  static const String emailUrl = 'mailto:$orgEmail?subject=Inquiry%20from%20Masjid Omar Muhammad Moorpark%20App';
 }

@@ -215,21 +215,21 @@ class EventDetailsScreen extends StatelessWidget {
                     height: 1.6,
                   ),
                 ),
-                const SizedBox(height: 40),
-                
-                // RSVP / Register Button
-                ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Thank you! You have marked your interest for ${event.title}.'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                  child: const Text('Add to Calendar & RSVP'),
-                ),
-                const SizedBox(height: 24),
+                // const SizedBox(height: 40),
+                //
+                // // RSVP / Register Button
+                // ElevatedButton(
+                //   onPressed: () {
+                //     ScaffoldMessenger.of(context).showSnackBar(
+                //       SnackBar(
+                //         content: Text('Thank you! You have marked your interest for ${event.title}.'),
+                //         behavior: SnackBarBehavior.floating,
+                //       ),
+                //     );
+                //   },
+                //   child: const Text('Add to Calendar & RSVP'),
+                // ),
+                // const SizedBox(height: 24),
               ]),
             ),
           ),

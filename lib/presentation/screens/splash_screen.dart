@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state_provider.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/navigation/app_routes.dart';
+import '../widgets/app_logo.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -61,41 +63,39 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         ),
         child: Center(
-          child: AnimatedOpacity(
-            opacity: _opacity,
-            duration: const Duration(seconds: 1),
-            curve: Curves.easeIn,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Clean Elegant Green Logo Icon
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: AnimatedOpacity(
+              opacity: _opacity,
+              duration: const Duration(seconds: 1),
+              curve: Curves.easeIn,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                 Container(
-                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.3),
+                        color: Colors.black.withOpacity(0.2),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.spa_rounded, // Peaceful Green Leaf/Flower logo
-                    size: 80,
-                    color: Colors.white,
-                  ),
+                  child: const AppLogo(size: 128, circular: true),
                 ),
                 const SizedBox(height: 24),
                 // Title
                 Text(
-                  'Community Hub',
-                  style: theme.textTheme.headlineLarge?.copyWith(
+                  AppConstants.appName,
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: theme.colorScheme.primary,
-                    letterSpacing: 0.8,
+                    letterSpacing: 0.4,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -122,6 +122,7 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }

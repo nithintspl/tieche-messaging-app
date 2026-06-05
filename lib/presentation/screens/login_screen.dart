@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/auth_provider.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/navigation/app_routes.dart';
+import '../widgets/app_logo.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -76,28 +78,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo / Icon Banner
-                  Icon(
-                    Icons.spa_rounded,
-                    size: 80,
-                    color: theme.colorScheme.primary,
+                  const Center(
+                    child: AppLogo(size: 96, circular: true),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Welcome to Community Hub',
+                    'Welcome to ${AppConstants.appName}',
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineMedium?.copyWith(
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Login to access announcements, member profiles, and notifications.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
-                  ),
+                  // const SizedBox(height: 8),
+                  // Text(
+                  //   'Login to access announcements, member profiles, and notifications.',
+                  //   textAlign: TextAlign.center,
+                  //   style: theme.textTheme.bodyMedium?.copyWith(
+                  //     color: theme.colorScheme.outline,
+                  //   ),
+                  // ),
                   const SizedBox(height: 32),
 
                   // Email/Phone Field
@@ -105,12 +106,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(
-                      labelText: 'Email or Mobile Number',
+                      labelText: 'Email',
                       prefixIcon: Icon(Icons.person_outline),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your email or phone number';
+                        return 'Please enter your email';
                       }
                       return null;
                     },
@@ -163,23 +164,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: const Text('Login'),
                     ),
                   
-                  const SizedBox(height: 16),
-                  // Mock Hint
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Demo Hint: Enter any valid email (e.g. test@example.com) and a password with 6+ characters.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                        height: 1.3,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                  // const SizedBox(height: 16),
+                  // // Mock Hint
+                  // Container(
+                  //   padding: const EdgeInsets.all(12),
+                  //   decoration: BoxDecoration(
+                  //     color: theme.colorScheme.primaryContainer.withOpacity(0.15),
+                  //     borderRadius: BorderRadius.circular(8),
+                  //   ),
+                  //   child: Text(
+                  //     'Demo Hint: Enter any valid email (e.g. test@example.com) and a password with 6+ characters.',
+                  //     style: theme.textTheme.bodySmall?.copyWith(
+                  //       color: theme.colorScheme.primary,
+                  //       height: 1.3,
+                  //     ),
+                  //     textAlign: TextAlign.center,
+                  //   ),
+                  // ),
                 ],
               ),
             ),

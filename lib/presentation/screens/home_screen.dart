@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state_provider.dart';
 import '../state/auth_provider.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/navigation/app_routes.dart';
+import '../widgets/app_logo.dart';
 import '../widgets/custom_carousel.dart';
 import '../widgets/message_card.dart';
 import '../widgets/event_card.dart';
@@ -34,6 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: _currentTab == 1,
+        toolbarHeight: _currentTab == 0 ? 64 : kToolbarHeight,
         leading: _currentTab == 1
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
@@ -47,51 +51,63 @@ class _HomeScreenState extends State<HomeScreen> {
         title: _currentTab == 1
             ? const Text('Contact Us')
             : Row(
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(Icons.spa_rounded, color: theme.colorScheme.primary, size: 24),
-                  const SizedBox(width: 8),
-                  const Text('Community Hub'),
+                  // const AppLogo(
+                  //   size: 28,
+                  //   borderRadius: BorderRadius.all(Radius.circular(6)),
+                  // ),
+                  // const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      AppConstants.appName,
+                      maxLines: 2,
+                      style: theme.appBarTheme.titleTextStyle?.copyWith(
+                        fontSize: 15,
+                        height: 1.15,
+                      ),
+                    ),
+                  ),
                 ],
               ),
         actions: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined, size: 28),
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.notifications);
-                },
-              ),
-              if (appState.unreadNotificationCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      appState.unreadNotificationCount.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 8),
+          // Stack(
+          //   alignment: Alignment.center,
+          //   children: [
+          //     IconButton(
+          //       icon: const Icon(Icons.notifications_outlined, size: 28),
+          //       onPressed: () {
+          //         Navigator.pushNamed(context, AppRoutes.notifications);
+          //       },
+          //     ),
+          //     if (appState.unreadNotificationCount > 0)
+          //       Positioned(
+          //         right: 8,
+          //         top: 8,
+          //         child: Container(
+          //           padding: const EdgeInsets.all(4),
+          //           decoration: const BoxDecoration(
+          //             color: Colors.red,
+          //             shape: BoxShape.circle,
+          //           ),
+          //           constraints: const BoxConstraints(
+          //             minWidth: 16,
+          //             minHeight: 16,
+          //           ),
+          //           child: Text(
+          //             appState.unreadNotificationCount.toString(),
+          //             style: const TextStyle(
+          //               color: Colors.white,
+          //               fontSize: 10,
+          //               fontWeight: FontWeight.bold,
+          //             ),
+          //             textAlign: TextAlign.center,
+          //           ),
+          //         ),
+          //       ),
+          //   ],
+          // ),
+          // const SizedBox(width: 8),
         ],
       ),
       drawer: Drawer(

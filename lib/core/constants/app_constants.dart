@@ -1,5 +1,6 @@
 class AppConstants {
-  static const String appName = 'Community Hub';
+  static const String appName = 'Masjid Omar Muhammad Moorpark';
+  static const String appIconAsset = 'assets/icons/app_icon.png';
 
   // API Configuration
   // Use only apex host because some mobile DNS networks fail on `www`.

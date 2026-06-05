@@ -13,16 +13,16 @@ class ContactUsScreen extends StatelessWidget {
   Future<void> _launchUrl(BuildContext context, String urlString) async {
     final Uri url = Uri.parse(urlString);
     try {
-      if (await canLaunchUrl(url)) {
+     // if (await canLaunchUrl(url)) {
         await launchUrl(
           url,
           mode: urlString.startsWith('http')
               ? LaunchMode.externalApplication
               : LaunchMode.platformDefault,
         );
-      } else {
-        throw 'Could not launch $urlString';
-      }
+      // } else {
+      //   throw 'Could not launch $urlString';
+      // }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

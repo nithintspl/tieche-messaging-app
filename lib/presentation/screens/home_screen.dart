@@ -160,25 +160,25 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             const Divider(),
-            if (authProvider.isAuthenticated)
-              ListTile(
-                leading: const Icon(Icons.logout),
-                title: const Text('Logout'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _handleLogout(context, authProvider);
-                },
-              )
-            else
-              ListTile(
-                leading: const Icon(Icons.login),
-                title: const Text('Login'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, AppRoutes.login);
-                },
-              ),
-            const Divider(),
+            // if (authProvider.isAuthenticated)
+            //   ListTile(
+            //     leading: const Icon(Icons.logout),
+            //     title: const Text('Logout'),
+            //     onTap: () {
+            //       Navigator.pop(context);
+            //       _handleLogout(context, authProvider);
+            //     },
+            //   )
+            // else
+            //   ListTile(
+            //     leading: const Icon(Icons.login),
+            //     title: const Text('Login'),
+            //     onTap: () {
+            //       Navigator.pop(context);
+            //       Navigator.pushNamed(context, AppRoutes.login);
+            //     },
+            //   ),
+            // const Divider(),
             ListTile(
               leading: const Icon(Icons.access_time_outlined),
               title: const Text('Daily Jammat Timings'),

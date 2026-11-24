@@ -24,4 +24,8 @@ class AppConstants {
   static const String googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=$orgLatitude,$orgLongitude';
   static const String telUrl = 'tel:$orgPhoneRaw';
   static const String emailUrl = 'mailto:$orgEmail?subject=Inquiry%20from%20Masjid Omar Muhammad Moorpark%20App';
+
+  /// Nominatim usage policy requires an identifiable User-Agent.
+  static const String nominatimUserAgent =
+      'MasjidOmarMoorparkApp/1.0 (${orgEmail})';
 }

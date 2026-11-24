@@ -11,6 +11,8 @@ import '../widgets/event_card.dart';
 import '../widgets/prayer_timings_card.dart';
 import '../../data/models/prayer_time_model.dart';
 import 'contact_us_screen.dart';
+import 'qibla_compass_screen.dart';
+import 'islamic_finder_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,29 +30,25 @@ class _HomeScreenState extends State<HomeScreen> {
     final appState = Provider.of<AppStateProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
 
-    // List of screens for Bottom Navigation Bar
-    final List<Widget> tabs = [
+    final tabs = [
       _buildHomeTab(appState, theme),
+      IslamicFinderScreen(isTabActive: _currentTab == 1),
+      QiblaCompassScreen(isTabActive: _currentTab == 2),
       const ContactUsScreen(isTab: true),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        centerTitle: _currentTab == 1,
+        centerTitle: _currentTab != 0,
         toolbarHeight: _currentTab == 0 ? 64 : kToolbarHeight,
-        leading: _currentTab == 1
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  setState(() {
-                    _currentTab = 0;
-                  });
-                },
-              )
-            : null,
+        automaticallyImplyLeading: _currentTab == 0,
         title: _currentTab == 1
-            ? const Text('Contact Us')
-            : Row(
+            ? const Text('Islamic Finder')
+            : _currentTab == 2
+                ? const Text('Qibla')
+                : _currentTab == 3
+                    ? const Text('Contact Us')
+                    : Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // const AppLogo(
@@ -149,13 +147,29 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.contact_support_outlined),
-              title: const Text('Contact Us'),
+              leading: const Icon(Icons.travel_explore_outlined),
+              title: const Text('Islamic Finder'),
               selected: _currentTab == 1,
               onTap: () {
-                setState(() {
-                  _currentTab = 1;
-                });
+                setState(() => _currentTab = 1);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.explore_outlined),
+              title: const Text('Qibla Compass'),
+              selected: _currentTab == 2,
+              onTap: () {
+                setState(() => _currentTab = 2);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.contact_support_outlined),
+              title: const Text('Contact Us'),
+              selected: _currentTab == 3,
+              onTap: () {
+                setState(() => _currentTab = 3);
                 Navigator.pop(context);
               },
             ),
@@ -190,7 +204,37 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body: tabs[_currentTab],
+      body: IndexedStack(
+        index: _currentTab,
+        children: tabs,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentTab,
+        onTap: (index) => setState(() => _currentTab = index),
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.travel_explore_outlined),
+            activeIcon: Icon(Icons.travel_explore),
+            label: 'Finder',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.explore_outlined),
+            activeIcon: Icon(Icons.explore),
+            label: 'Qibla',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.contact_support_outlined),
+            activeIcon: Icon(Icons.contact_support),
+            label: 'Contact',
+          ),
+        ],
+      ),
     );
   }
 

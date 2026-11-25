@@ -12,6 +12,7 @@ import 'data/repositories/event_repository.dart';
 import 'data/repositories/notification_repository.dart';
 import 'data/repositories/prayer_timings_repository.dart';
 import 'data/repositories/jamat_override_repository.dart';
+import 'data/services/firebase_messaging_service.dart';
 import 'data/services/location_search_service.dart';
 import 'data/services/nearby_places_service.dart';
 import 'data/services/prayer_times_service.dart';
@@ -23,6 +24,7 @@ import 'presentation/state/islamic_finder_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await FirebaseMessagingService.initialize();
 
   // Initialize Local Storage Service
   final localStorageService = await LocalStorageService.init();

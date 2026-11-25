@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "353619575519",
+    "project_id": "communityapp-1c8d2",
+    "storage_bucket": "communityapp-1c8d2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:353619575519:android:6894449756b5dd1c1e9f6a",
+        "android_client_info": {
+          "package_name": "com.tieche.messaging.tieche_messaging_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1yPufW4Gbf8eVKZz7HOlRWFn8XD3UeL0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

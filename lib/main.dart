@@ -23,8 +23,14 @@ import 'presentation/state/islamic_finder_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final navigatorKey = GlobalKey<NavigatorState>();
+
   await Firebase.initializeApp();
-  await FirebaseMessagingService.initialize();
+  await FirebaseMessagingService.initialize(navigatorKey: navigatorKey);
+
+  final initialRoute = FirebaseMessagingService.launchedFromNotification
+      ? AppRoutes.home
+      : AppRoutes.splash;
 
   // Initialize Local Storage Service
   final localStorageService = await LocalStorageService.init();
@@ -77,23 +83,34 @@ void main() async {
           },
         ),
       ],
-      child: const MyApp(),
+      child: MyApp(
+        navigatorKey: navigatorKey,
+        initialRoute: initialRoute,
+      ),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({
+    super.key,
+    required this.navigatorKey,
+    required this.initialRoute,
+  });
+
+  final GlobalKey<NavigatorState> navigatorKey;
+  final String initialRoute;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system, // Dynamically toggle based on OS settings
-      initialRoute: AppRoutes.splash,
+      initialRoute: initialRoute,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }

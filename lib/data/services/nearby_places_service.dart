@@ -4,7 +4,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../core/constants/app_constants.dart';
 import '../models/nearby_place_model.dart';
 
 class NearbyPlacesService {
@@ -64,15 +63,7 @@ class NearbyPlacesService {
       await _writeDiskCache(key, entry);
       return _attachDistances(places, latitude, longitude);
     } catch (e) {
-      final phpPlaces = await _fetchPhpFallback(
-        latitude: latitude,
-        longitude: longitude,
-        type: type,
-        radiusMeters: radiusMeters,
-      );
-      if (phpPlaces != null) {
-        return _attachDistances(phpPlaces, latitude, longitude);
-      }
+      // No backend nearby-places API; rely on Overpass + cache only.
       rethrow;
     }
   }
@@ -272,38 +263,9 @@ out center body;
     return 'Halal Restaurant';
   }
 
-  Future<List<NearbyPlace>?> _fetchPhpFallback({
-    required double latitude,
-    required double longitude,
-    required NearbyPlaceType type,
-    required int radiusMeters,
-  }) async {
-    final uri = Uri.parse(
-      '${AppConstants.baseApiUrl}/api/nearby-places.php'
-      '?lat=$latitude&lng=$longitude&type=${type.name}&radius=$radiusMeters',
-    );
-    try {
-      final response = await _client.get(uri).timeout(const Duration(seconds: 10));
-      if (response.statusCode != 200) return null;
-      final jsonBody = json.decode(response.body);
-      if (jsonBody is! List) return null;
-      return jsonBody.map((item) {
-        final map = item as Map<String, dynamic>;
-        return NearbyPlace(
-          id: map['id']?.toString() ?? '',
-          name: map['name'] as String? ?? 'Place',
-          latitude: (map['lat'] as num).toDouble(),
-          longitude: (map['lng'] as num).toDouble(),
-          distanceMeters: (map['distance_m'] as num?)?.toDouble() ?? 0,
-          type: type,
-          address: map['address'] as String?,
-          subtitle: map['subtitle'] as String?,
-        );
-      }).toList();
-    } catch (_) {
-      return null;
-    }
-  }
+  // Backend nearby-places API not available — see commented _fetchPhpFallback below.
+  //
+  // Future<List<NearbyPlace>?> _fetchPhpFallback({ ... }) async { ... }
 
   Future<_CacheEntry?> _readDiskCache(String key) async {
     final prefs = await SharedPreferences.getInstance();

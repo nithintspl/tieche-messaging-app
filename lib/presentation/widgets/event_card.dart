@@ -11,9 +11,22 @@ class EventCard extends StatelessWidget {
     required this.onTap,
   });
 
-  String _getMonthName(DateTime date) {
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    return months[date.month - 1];
+  bool get _hasImage {
+    final url = event.imageUrl?.trim();
+    return url != null && url.isNotEmpty;
+  }
+
+  String _formatEventDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final eventDay = DateTime(date.year, date.month, date.day);
+    final dayDiff = eventDay.difference(today).inDays;
+
+    if (dayDiff == 0) return 'Today';
+    if (dayDiff == 1) return 'Tomorrow';
+    if (dayDiff == -1) return 'Yesterday';
+    if (dayDiff > 1 && dayDiff < 7) return 'In $dayDiff days';
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   @override
@@ -26,7 +39,7 @@ class EventCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+          color: theme.colorScheme.primary.withValues(alpha: 0.12),
           width: 1,
         ),
       ),
@@ -36,175 +49,110 @@ class EventCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Event Image/Gradient Banner & Date Badge
-            Stack(
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: event.imageUrl != null
-                      ? Image.network(
-                          event.imageUrl!,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return Container(
-                              color: theme.colorScheme.primaryContainer.withOpacity(0.1),
-                              child: const Center(
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                            );
-                          },
-                          errorBuilder: (_, __, ___) => Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  theme.colorScheme.primary.withOpacity(0.85),
-                                  theme.colorScheme.secondary.withOpacity(0.85),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                Icons.event_available,
-                                size: 48,
-                                color: theme.colorScheme.onPrimary.withOpacity(0.9),
-                              ),
-                            ),
-                          ),
-                        )
-                      : Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                theme.colorScheme.primary.withOpacity(0.85),
-                                theme.colorScheme.secondary.withOpacity(0.85),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.event_available,
-                              size: 48,
-                              color: theme.colorScheme.onPrimary.withOpacity(0.9),
-                            ),
-                          ),
-                        ),
+            if (_hasImage)
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Image.network(
+                  event.imageUrl!.trim(),
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return ColoredBox(
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    );
+                  },
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
-                // Floating Date Badge
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          event.date.day.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            height: 1.1,
-                          ),
-                        ),
-                        Text(
-                          _getMonthName(event.date),
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+              ),
+            Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: theme.colorScheme.primary,
+                    width: 5,
                   ),
                 ),
-              ],
-            ),
-            
-            // Event Details
-            Padding(
+              ),
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.event_outlined,
+                        size: 14,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _formatEventDate(event.date),
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   Text(
                     event.title,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  
-                  // Time
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 16,
-                        color: theme.colorScheme.outline,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          event.time,
-                          style: theme.textTheme.bodyMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  
-                  // Location
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 16,
-                        color: theme.colorScheme.outline,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          event.location,
-                          style: theme.textTheme.bodyMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  
-                  // Description Snippet
-                  Text(
-                    event.description,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                  if (event.time.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      event.time,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (event.location.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      event.location,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (event.description.trim().isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      event.description.trim(),
+                      style: theme.textTheme.bodyMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        'View Event',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 14,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ],
                   ),
                 ],
               ),

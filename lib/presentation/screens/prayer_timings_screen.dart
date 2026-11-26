@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import '../state/app_state_provider.dart';
 
 class PrayerTimingsScreen extends StatelessWidget {
-  const PrayerTimingsScreen({super.key});
+  const PrayerTimingsScreen({super.key, this.isTab = false});
+
+  final bool isTab;
 
   IconData _getPrayerIcon(String name) {
     final upperName = name.toUpperCase();
@@ -29,29 +31,24 @@ class PrayerTimingsScreen extends StatelessWidget {
     final appState = Provider.of<AppStateProvider>(context);
     final timings = appState.prayerTimings;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daily Jammat Timings'),
-        elevation: 0,
-      ),
-      body: timings.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.access_time, size: 48, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No timings available.',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ],
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: () => appState.fetchAllData(),
-              color: theme.colorScheme.primary,
-              child: ListView(
+    final body = timings.isEmpty
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.access_time, size: 48, color: Colors.grey),
+                const SizedBox(height: 16),
+                Text(
+                  'No timings available.',
+                  style: theme.textTheme.titleMedium,
+                ),
+              ],
+            ),
+          )
+        : RefreshIndicator(
+            onRefresh: () => appState.fetchAllData(),
+            color: theme.colorScheme.primary,
+            child: ListView(
                 padding: const EdgeInsets.all(16.0),
                 children: [
                   // Beautiful Mosque Header Banner
@@ -200,7 +197,18 @@ class PrayerTimingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
+            );
+
+    if (isTab) {
+      return body;
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Daily Jammat Timings'),
+        elevation: 0,
+      ),
+      body: body,
     );
   }
 }

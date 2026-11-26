@@ -10,9 +10,9 @@ import '../widgets/message_card.dart';
 import '../widgets/event_card.dart';
 import '../widgets/prayer_timings_card.dart';
 import '../../data/models/prayer_time_model.dart';
-import 'contact_us_screen.dart';
 import 'qibla_compass_screen.dart';
 import 'islamic_finder_screen.dart';
+import 'prayer_timings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _buildHomeTab(appState, theme),
       IslamicFinderScreen(isTabActive: _currentTab == 1),
       QiblaCompassScreen(isTabActive: _currentTab == 2),
-      const ContactUsScreen(isTab: true),
+      const PrayerTimingsScreen(isTab: true),
     ];
 
     return Scaffold(
@@ -45,9 +45,9 @@ class _HomeScreenState extends State<HomeScreen> {
         title: _currentTab == 1
             ? const Text('Islamic Finder')
             : _currentTab == 2
-                ? const Text('Qibla')
+                ? const Text('Qibla Compass')
                 : _currentTab == 3
-                    ? const Text('Contact Us')
+                    ? const Text('Daily Jammat Timings')
                     : Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -165,12 +165,20 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.contact_support_outlined),
-              title: const Text('Contact Us'),
+              leading: const Icon(Icons.access_time_outlined),
+              title: const Text('Daily Jammat Timings'),
               selected: _currentTab == 3,
               onTap: () {
                 setState(() => _currentTab = 3);
                 Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.contact_support_outlined),
+              title: const Text('Contact Us'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, AppRoutes.contactUs);
               },
             ),
             const Divider(),
@@ -193,14 +201,6 @@ class _HomeScreenState extends State<HomeScreen> {
             //     },
             //   ),
             // const Divider(),
-            ListTile(
-              leading: const Icon(Icons.access_time_outlined),
-              title: const Text('Daily Jammat Timings'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, AppRoutes.prayerTimings);
-              },
-            ),
           ],
         ),
       ),
@@ -229,9 +229,9 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Qibla',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.contact_support_outlined),
-            activeIcon: Icon(Icons.contact_support),
-            label: 'Contact',
+            icon: Icon(Icons.access_time_outlined),
+            activeIcon: Icon(Icons.access_time),
+            label: 'Jammat',
           ),
         ],
       ),

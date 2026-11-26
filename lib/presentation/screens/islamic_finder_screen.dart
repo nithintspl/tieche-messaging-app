@@ -377,30 +377,70 @@ class _NearbyPlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
-          child: Icon(
-            place.type == NearbyPlaceType.masjid ? Icons.mosque_outlined : Icons.restaurant_outlined,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-        title: Text(place.name, maxLines: 2, overflow: TextOverflow.ellipsis),
-        subtitle: Column(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${place.distanceLabel}${place.subtitle != null ? ' · ${place.subtitle}' : ''}'),
-            if (place.address != null) Text(place.address!, maxLines: 2, overflow: TextOverflow.ellipsis),
-          ],
-        ),
-        isThreeLine: place.address != null,
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextButton(onPressed: onDirections, child: const Text('Directions')),
-            if (onRegisterMasjid != null)
-              TextButton(onPressed: onRegisterMasjid, child: const Text('Jamat')),
+            CircleAvatar(
+              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
+              child: Icon(
+                place.type == NearbyPlaceType.masjid ? Icons.mosque_outlined : Icons.restaurant_outlined,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    place.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${place.distanceLabel}${place.subtitle != null ? ' · ${place.subtitle}' : ''}',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  if (place.address != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      place.address!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 0,
+                    children: [
+                      TextButton(
+                        onPressed: onDirections,
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                        child: const Text('Directions'),
+                      ),
+                      if (onRegisterMasjid != null)
+                        TextButton(
+                          onPressed: onRegisterMasjid,
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          child: const Text('Jamat'),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

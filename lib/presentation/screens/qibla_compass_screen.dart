@@ -84,11 +84,6 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen>
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    Text(
-                      'Qibla Compass',
-                      style: theme.textTheme.headlineMedium?.copyWith(fontSize: 22),
-                    ),
-                    const SizedBox(height: 8),
                     if (provider.isLoadingLocation)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 12),

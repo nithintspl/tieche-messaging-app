@@ -2,6 +2,9 @@ class AppConstants {
   static const String appName = 'Masjid Omar Muhammad Moorpark';
   static const String appIconAsset = 'assets/icons/app_icon.png';
 
+  /// Firebase Cloud Messaging topic for broadcast notifications.
+  static const String fcmTopicNewTopic = 'new_topic';
+
   // API Configuration
   // Use only apex host because some mobile DNS networks fail on `www`.
   static const List<String> apiBaseUrls = [

@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,6 +12,7 @@ import 'data/repositories/event_repository.dart';
 import 'data/repositories/notification_repository.dart';
 import 'data/repositories/prayer_timings_repository.dart';
 import 'data/repositories/jamat_override_repository.dart';
+import 'data/services/firebase_messaging_service.dart';
 import 'data/services/location_search_service.dart';
 import 'data/services/nearby_places_service.dart';
 import 'data/services/prayer_times_service.dart';
@@ -21,6 +23,14 @@ import 'presentation/state/islamic_finder_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final navigatorKey = GlobalKey<NavigatorState>();
+
+  await Firebase.initializeApp();
+  await FirebaseMessagingService.initialize(navigatorKey: navigatorKey);
+
+  final initialRoute = FirebaseMessagingService.launchedFromNotification
+      ? AppRoutes.home
+      : AppRoutes.splash;
 
   // Initialize Local Storage Service
   final localStorageService = await LocalStorageService.init();
@@ -73,23 +83,34 @@ void main() async {
           },
         ),
       ],
-      child: const MyApp(),
+      child: MyApp(
+        navigatorKey: navigatorKey,
+        initialRoute: initialRoute,
+      ),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({
+    super.key,
+    required this.navigatorKey,
+    required this.initialRoute,
+  });
+
+  final GlobalKey<NavigatorState> navigatorKey;
+  final String initialRoute;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system, // Dynamically toggle based on OS settings
-      initialRoute: AppRoutes.splash,
+      initialRoute: initialRoute,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }

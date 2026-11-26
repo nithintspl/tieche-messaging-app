@@ -53,6 +53,10 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Your location is used for Qibla direction, local prayer and Jamat times, and finding nearby Masjids and Halal food.</string>
 	<key>UISupportedInterfaceOrientations</key>

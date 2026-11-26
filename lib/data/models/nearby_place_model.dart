@@ -1,5 +1,13 @@
 enum NearbyPlaceType { masjid, halalFood }
 
+/// Provenance label for observability (cache / Geoapify / TomTom / Overpass).
+enum NearbyPlaceSource {
+  cache,
+  geoapify,
+  tomtom,
+  overpass,
+}
+
 class NearbyPlace {
   final String id;
   final String name;
@@ -10,6 +18,7 @@ class NearbyPlace {
   final String? subtitle;
   final NearbyPlaceType type;
   final Map<String, String> tags;
+  final NearbyPlaceSource? source;
 
   const NearbyPlace({
     required this.id,
@@ -21,6 +30,7 @@ class NearbyPlace {
     this.address,
     this.subtitle,
     this.tags = const {},
+    this.source,
   });
 
   String get distanceLabel {

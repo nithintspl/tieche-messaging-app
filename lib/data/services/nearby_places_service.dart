@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/config/maps_api_config.dart';
+import '../../core/utils/spatial_grid.dart';
 import '../models/nearby_place_model.dart';
 
 class NearbyPlacesService {
@@ -12,7 +16,11 @@ class NearbyPlacesService {
   final http.Client _client;
 
   static const _defaultRadiusMeters = 5000;
-  static const _cacheTtl = Duration(minutes: 30);
+  static const _apiTimeout = Duration(seconds: 6);
+  static const _diskKeyPrefix = 'places_v2_cache_';
+
+  static const _ttlMasjid = Duration(days: 7);
+  static const _ttlHalal = Duration(days: 3);
 
   static const _overpassEndpoints = [
     'https://overpass-api.de/api/interpreter',
@@ -21,11 +29,14 @@ class NearbyPlacesService {
   ];
 
   final Map<String, _CacheEntry> _memoryCache = {};
+  final Map<String, Future<List<NearbyPlace>>> _inFlight = {};
+
+  Duration _ttlFor(NearbyPlaceType type) =>
+      type == NearbyPlaceType.masjid ? _ttlMasjid : _ttlHalal;
 
   String _gridKey(double lat, double lng, int radius, NearbyPlaceType type) {
-    final roundedLat = (lat / 0.005).round() * 0.005;
-    final roundedLng = (lng / 0.005).round() * 0.005;
-    return '${type.name}_${roundedLat.toStringAsFixed(3)}_${roundedLng.toStringAsFixed(3)}_$radius';
+    final bucket = SpatialGrid.bucketKey(lat, lng);
+    return '${type.name}_${bucket}_$radius';
   }
 
   Future<List<NearbyPlace>> fetchNearby({
@@ -40,32 +51,298 @@ class NearbyPlacesService {
 
     final key = _gridKey(latitude, longitude, radiusMeters, type);
 
+    final existing = _inFlight[key];
+    if (existing != null) {
+      final places = await existing;
+      return _attachDistances(places, latitude, longitude);
+    }
+
+    final future = _fetchNearbyPipeline(
+      key: key,
+      latitude: latitude,
+      longitude: longitude,
+      type: type,
+      radiusMeters: radiusMeters,
+    );
+    _inFlight[key] = future;
+    try {
+      final places = await future;
+      return _attachDistances(places, latitude, longitude);
+    } finally {
+      _inFlight.remove(key);
+    }
+  }
+
+  Future<List<NearbyPlace>> _fetchNearbyPipeline({
+    required String key,
+    required double latitude,
+    required double longitude,
+    required NearbyPlaceType type,
+    required int radiusMeters,
+  }) async {
+    final ttl = _ttlFor(type);
+
     final memory = _memoryCache[key];
-    if (memory != null && !memory.isExpired) {
-      return _attachDistances(memory.places, latitude, longitude);
+    if (memory != null && !memory.isExpired(ttl)) {
+      _logTier('Cache');
+      return _tagSource(memory.places, NearbyPlaceSource.cache);
     }
 
     final disk = await _readDiskCache(key);
-    if (disk != null && !disk.isExpired) {
+    if (disk != null && !disk.isExpired(ttl)) {
       _memoryCache[key] = disk;
-      return _attachDistances(disk.places, latitude, longitude);
+      _logTier('Cache');
+      return _tagSource(disk.places, NearbyPlaceSource.cache);
     }
 
-    try {
-      final places = await _queryOverpass(
+    final stale = disk ?? (memory != null && memory.isExpired(ttl) ? memory : null);
+
+    List<NearbyPlace> places = [];
+    NearbyPlaceSource? source;
+
+    final geoPlaces = await _tryGeoapify(
+      latitude: latitude,
+      longitude: longitude,
+      radiusMeters: radiusMeters,
+      type: type,
+    );
+
+    if (geoPlaces != null && _geoapifyAcceptable(geoPlaces, type)) {
+      places = geoPlaces;
+      source = NearbyPlaceSource.geoapify;
+      _logTier('Geoapify');
+    } else {
+      final tomtomPlaces = await _tryTomtom(
         latitude: latitude,
         longitude: longitude,
         radiusMeters: radiusMeters,
         type: type,
       );
-      final entry = _CacheEntry(places: places, storedAt: DateTime.now());
-      _memoryCache[key] = entry;
-      await _writeDiskCache(key, entry);
-      return _attachDistances(places, latitude, longitude);
-    } catch (e) {
-      // No backend nearby-places API; rely on Overpass + cache only.
-      rethrow;
+
+      if (tomtomPlaces != null && tomtomPlaces.isNotEmpty) {
+        places = tomtomPlaces;
+        source = NearbyPlaceSource.tomtom;
+        _logTier('TomTom');
+      } else if (geoPlaces != null && geoPlaces.isNotEmpty) {
+        places = geoPlaces;
+        source = NearbyPlaceSource.geoapify;
+        _logTier('Geoapify');
+      } else {
+        try {
+          places = await _queryOverpass(
+            latitude: latitude,
+            longitude: longitude,
+            radiusMeters: radiusMeters,
+            type: type,
+          );
+          if (places.isNotEmpty) {
+            source = NearbyPlaceSource.overpass;
+            _logTier('Overpass');
+          }
+        } catch (e) {
+          if (stale != null && stale.places.isNotEmpty) {
+            _logTier('Cache (stale fallback)');
+            return _tagSource(stale.places, NearbyPlaceSource.cache);
+          }
+          rethrow;
+        }
+      }
     }
+
+    if (places.isEmpty) {
+      if (stale != null && stale.places.isNotEmpty) {
+        _logTier('Cache (stale fallback)');
+        return _tagSource(stale.places, NearbyPlaceSource.cache);
+      }
+      return [];
+    }
+
+    final tagged = _tagSource(places, source!);
+    final entry = _CacheEntry(places: tagged, storedAt: DateTime.now());
+    _memoryCache[key] = entry;
+    unawaited(_writeDiskCache(key, entry));
+    return tagged;
+  }
+
+  bool _geoapifyAcceptable(List<NearbyPlace> places, NearbyPlaceType type) {
+    if (type == NearbyPlaceType.masjid) return places.isNotEmpty;
+    return places.length >= 3;
+  }
+
+  void _logTier(String tier) {
+    debugPrint('[Places] Served from: $tier');
+  }
+
+  List<NearbyPlace> _tagSource(List<NearbyPlace> places, NearbyPlaceSource source) {
+    return places
+        .map(
+          (p) => NearbyPlace(
+            id: p.id,
+            name: p.name,
+            latitude: p.latitude,
+            longitude: p.longitude,
+            distanceMeters: p.distanceMeters,
+            type: p.type,
+            address: p.address,
+            subtitle: p.subtitle,
+            tags: p.tags,
+            source: source,
+          ),
+        )
+        .toList();
+  }
+
+  Future<List<NearbyPlace>?> _tryGeoapify({
+    required double latitude,
+    required double longitude,
+    required int radiusMeters,
+    required NearbyPlaceType type,
+  }) async {
+    if (!MapsApiConfig.hasGeoapify) return null;
+
+    final categories = type == NearbyPlaceType.masjid
+        ? 'religion.place_of_worship.islam'
+        : 'catering.restaurant.halal,catering.fast_food.halal';
+
+    final params = <String, String>{
+      'categories': categories,
+      'filter': 'circle:$longitude,$latitude,$radiusMeters',
+      'bias': 'proximity:$longitude,$latitude',
+      'limit': '25',
+      'apiKey': MapsApiConfig.geoapifyApiKey,
+    };
+
+    if (type == NearbyPlaceType.halalFood) {
+      params['conditions'] = 'diet.halal';
+    }
+
+    final uri = Uri.https('api.geoapify.com', '/v2/places', params);
+
+    try {
+      final response = await _client.get(uri).timeout(_apiTimeout);
+      if (_isRetryableHttp(response.statusCode)) return null;
+      if (response.statusCode != 200) return null;
+
+      return _parseGeoapifyJson(response.body, type);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<NearbyPlace> _parseGeoapifyJson(String body, NearbyPlaceType type) {
+    final decoded = json.decode(body) as Map<String, dynamic>;
+    final features = decoded['features'] as List<dynamic>? ?? [];
+    final places = <NearbyPlace>[];
+
+    for (final raw in features) {
+      if (raw is! Map<String, dynamic>) continue;
+      final props = raw['properties'] as Map<String, dynamic>? ?? {};
+      final geometry = raw['geometry'] as Map<String, dynamic>?;
+      final coords = geometry?['coordinates'] as List<dynamic>?;
+      if (coords == null || coords.length < 2) continue;
+
+      final lon = (coords[0] as num).toDouble();
+      final lat = (coords[1] as num).toDouble();
+      final name = (props['name'] as String?)?.trim();
+      if (name == null || name.isEmpty) continue;
+
+      final address = props['formatted'] as String? ?? props['address_line1'] as String?;
+      final placeId = props['place_id']?.toString() ?? 'geoapify_${lat}_$lon';
+
+      places.add(
+        NearbyPlace(
+          id: placeId,
+          name: name,
+          latitude: lat,
+          longitude: lon,
+          distanceMeters: 0,
+          type: type,
+          address: address,
+          subtitle: props['categories'] as String?,
+        ),
+      );
+    }
+    return places;
+  }
+
+  Future<List<NearbyPlace>?> _tryTomtom({
+    required double latitude,
+    required double longitude,
+    required int radiusMeters,
+    required NearbyPlaceType type,
+  }) async {
+    if (!MapsApiConfig.hasTomtom) return null;
+
+    final query = type == NearbyPlaceType.masjid ? 'mosque' : 'halal restaurant';
+    final encodedQuery = Uri.encodeComponent(query);
+
+    final params = <String, String>{
+      'lat': latitude.toString(),
+      'lon': longitude.toString(),
+      'radius': radiusMeters.toString(),
+      'limit': '25',
+      'key': MapsApiConfig.tomtomApiKey,
+    };
+    if (type == NearbyPlaceType.masjid) {
+      params['categorySet'] = '7339';
+    }
+
+    final uri = Uri.https('api.tomtom.com', '/search/2/search/$encodedQuery.json', params);
+
+    try {
+      final response = await _client.get(uri).timeout(_apiTimeout);
+      if (_isRetryableHttp(response.statusCode)) return null;
+      if (response.statusCode != 200) return null;
+
+      return _parseTomtomJson(response.body, type);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<NearbyPlace> _parseTomtomJson(String body, NearbyPlaceType type) {
+    final decoded = json.decode(body) as Map<String, dynamic>;
+    final results = decoded['results'] as List<dynamic>? ?? [];
+    final places = <NearbyPlace>[];
+
+    for (final raw in results) {
+      if (raw is! Map<String, dynamic>) continue;
+      final position = raw['position'] as Map<String, dynamic>?;
+      if (position == null) continue;
+      final lat = (position['lat'] as num?)?.toDouble();
+      final lon = (position['lon'] as num?)?.toDouble();
+      if (lat == null || lon == null) continue;
+
+      final poi = raw['poi'] as Map<String, dynamic>?;
+      final name = (poi?['name'] as String?)?.trim() ??
+          (raw['address'] as Map<String, dynamic>?)?['freeformAddress'] as String?;
+      if (name == null || name.isEmpty) continue;
+
+      final addressMap = raw['address'] as Map<String, dynamic>?;
+      final address = addressMap?['freeformAddress'] as String?;
+      final id = raw['id']?.toString() ?? 'tomtom_${lat}_$lon';
+
+      places.add(
+        NearbyPlace(
+          id: id,
+          name: name,
+          latitude: lat,
+          longitude: lon,
+          distanceMeters: 0,
+          type: type,
+          address: address,
+          subtitle: poi?['classifications']?.toString(),
+        ),
+      );
+    }
+    return places;
+  }
+
+  static bool _isRetryableHttp(int statusCode) {
+    return statusCode == 401 ||
+        statusCode == 403 ||
+        statusCode == 429 ||
+        statusCode >= 500;
   }
 
   static bool _isValidCoordinate(double lat, double lng) {
@@ -95,6 +372,7 @@ class NearbyPlacesService {
             address: p.address,
             subtitle: p.subtitle,
             tags: p.tags,
+            source: p.source,
           );
         })
         .toList()
@@ -107,7 +385,7 @@ class NearbyPlacesService {
     required int radiusMeters,
     required NearbyPlaceType type,
   }) async {
-    final query = _buildQuery(latitude, longitude, radiusMeters);
+    final query = _buildQuery(latitude, longitude, radiusMeters, type);
 
     Object? lastError;
     for (final endpoint in _overpassEndpoints) {
@@ -137,11 +415,19 @@ class NearbyPlacesService {
     throw lastError ?? Exception('Overpass request failed');
   }
 
-  String _buildQuery(double lat, double lng, int radius) {
-    return '''
+  String _buildQuery(double lat, double lng, int radius, NearbyPlaceType type) {
+    if (type == NearbyPlaceType.masjid) {
+      return '''
 [out:json][timeout:25];
 (
   nwr["amenity"="place_of_worship"]["religion"="muslim"](around:$radius,$lat,$lng);
+);
+out center body;
+''';
+    }
+    return '''
+[out:json][timeout:25];
+(
   nwr["diet:halal"~"^(yes|only)\$",i](around:$radius,$lat,$lng);
   nwr["halal"~"^(yes|only)\$",i](around:$radius,$lat,$lng);
   nwr["cuisine"~"halal",i](around:$radius,$lat,$lng);
@@ -163,8 +449,7 @@ out center body;
           <String, String>{};
 
       final elementType = _classify(tags);
-      if (elementType == null) continue;
-      if (elementType != type) continue;
+      if (elementType == null || elementType != type) continue;
 
       final coords = _readCoordinates(el);
       if (coords == null) continue;
@@ -263,13 +548,9 @@ out center body;
     return 'Halal Restaurant';
   }
 
-  // Backend nearby-places API not available — see commented _fetchPhpFallback below.
-  //
-  // Future<List<NearbyPlace>?> _fetchPhpFallback({ ... }) async { ... }
-
   Future<_CacheEntry?> _readDiskCache(String key) async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('overpass_cache_$key');
+    final raw = prefs.getString('$_diskKeyPrefix$key') ?? prefs.getString('overpass_cache_$key');
     if (raw == null) return null;
     try {
       final map = json.decode(raw) as Map<String, dynamic>;
@@ -277,6 +558,13 @@ out center body;
       final placesJson = map['places'] as List<dynamic>;
       final places = placesJson.map((p) {
         final m = p as Map<String, dynamic>;
+        NearbyPlaceSource? source;
+        final sourceRaw = m['source'] as String?;
+        if (sourceRaw != null) {
+          try {
+            source = NearbyPlaceSource.values.byName(sourceRaw);
+          } catch (_) {}
+        }
         return NearbyPlace(
           id: m['id'] as String,
           name: m['name'] as String,
@@ -286,6 +574,7 @@ out center body;
           type: NearbyPlaceType.values.byName(m['type'] as String),
           address: m['address'] as String?,
           subtitle: m['subtitle'] as String?,
+          source: source,
         );
       }).toList();
       return _CacheEntry(places: places, storedAt: storedAt);
@@ -309,11 +598,12 @@ out center body;
               'type': p.type.name,
               'address': p.address,
               'subtitle': p.subtitle,
+              if (p.source != null) 'source': p.source!.name,
             },
           )
           .toList(),
     });
-    await prefs.setString('overpass_cache_$key', payload);
+    await prefs.setString('$_diskKeyPrefix$key', payload);
   }
 }
 
@@ -323,5 +613,5 @@ class _CacheEntry {
   final List<NearbyPlace> places;
   final DateTime storedAt;
 
-  bool get isExpired => DateTime.now().difference(storedAt) > NearbyPlacesService._cacheTtl;
+  bool isExpired(Duration ttl) => DateTime.now().difference(storedAt) > ttl;
 }

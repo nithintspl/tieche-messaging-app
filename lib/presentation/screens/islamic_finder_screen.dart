@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:adhan_dart/adhan_dart.dart';
@@ -461,19 +462,32 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
   final _controller = TextEditingController();
   List<LocationSearchResult> _results = [];
   bool _searching = false;
+  Timer? _debounce;
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  Future<void> _runSearch(String value) async {
-    if (value.trim().length < 2) {
-      setState(() => _results = []);
+  void _onQueryChanged(String value) {
+    _debounce?.cancel();
+    final trimmed = value.trim();
+    if (trimmed.length < 3) {
+      setState(() {
+        _results = [];
+        _searching = false;
+      });
       return;
     }
     setState(() => _searching = true);
+    _debounce = Timer(const Duration(milliseconds: 600), () {
+      unawaited(_runSearch(trimmed));
+    });
+  }
+
+  Future<void> _runSearch(String value) async {
     try {
       final results = await widget.provider.searchLocations(value);
       if (!mounted) return;
@@ -507,7 +521,7 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
               hintText: 'Search city or neighborhood',
               prefixIcon: Icon(Icons.search),
             ),
-            onChanged: _runSearch,
+            onChanged: _onQueryChanged,
           ),
           if (_searching) const LinearProgressIndicator(),
           SizedBox(

@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "tieche_messaging_app (with map keys)",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": [
+        "--dart-define=GEOAPIFY_API_KEY=${env:GEOAPIFY_API_KEY}",
+        "--dart-define=TOMTOM_API_KEY=${env:TOMTOM_API_KEY}"
+      ]
+    },
+    {
+      "name": "tieche_messaging_app",
+      "request": "launch",
+      "type": "dart"
+    }
+  ]
+}

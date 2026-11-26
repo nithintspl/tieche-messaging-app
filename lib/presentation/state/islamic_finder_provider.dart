@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:adhan_dart/adhan_dart.dart';
 import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/utils/app_error_messages.dart';
@@ -30,8 +31,11 @@ class IslamicFinderProvider extends ChangeNotifier {
 
   static const _keyLocation = 'islamic_finder_location';
   static const _keyMadhab = 'islamic_finder_madhab';
+  static const _gpsReloadMinDistanceMeters = 400.0;
 
   bool _isTabActive = false;
+  double? _reloadAnchorLat;
+  double? _reloadAnchorLng;
   SelectedLocation? _location;
   DailyPrayerSchedule? _schedule;
   List<NearbyPlace> _places = [];
@@ -90,9 +94,29 @@ class IslamicFinderProvider extends ChangeNotifier {
         final restored = SelectedLocation.fromJson(
           json.decode(locRaw) as Map<String, dynamic>,
         );
-        if (_isValidLocation(restored)) _location = restored;
+        if (_isValidLocation(restored)) {
+          _location = restored;
+          _reloadAnchorLat = restored.latitude;
+          _reloadAnchorLng = restored.longitude;
+        }
       } catch (_) {}
     }
+  }
+
+  bool _movedBeyondReloadThreshold(SelectedLocation loc) {
+    if (_reloadAnchorLat == null || _reloadAnchorLng == null) return true;
+    final meters = Geolocator.distanceBetween(
+      _reloadAnchorLat!,
+      _reloadAnchorLng!,
+      loc.latitude,
+      loc.longitude,
+    );
+    return meters > _gpsReloadMinDistanceMeters;
+  }
+
+  void _updateReloadAnchor(SelectedLocation loc) {
+    _reloadAnchorLat = loc.latitude;
+    _reloadAnchorLng = loc.longitude;
   }
 
   void setTabActive(bool active) {
@@ -115,13 +139,13 @@ class IslamicFinderProvider extends ChangeNotifier {
 
   Future<void> refreshAll() async {
     if (_location == null || !_isValidLocation(_location)) {
-      await useDeviceLocation();
+      await useDeviceLocation(forceReload: true);
     } else {
       await _reloadPrayerAndPlaces();
     }
   }
 
-  Future<void> useDeviceLocation() async {
+  Future<void> useDeviceLocation({bool forceReload = false}) async {
     _loadingLocation = true;
     _prayerLoadFailed = false;
     _placesLoadFailed = false;
@@ -136,6 +160,9 @@ class IslamicFinderProvider extends ChangeNotifier {
           ),
         );
         notifyListeners();
+        return;
+      }
+      if (!forceReload && !_movedBeyondReloadThreshold(loc)) {
         return;
       }
       await _setLocation(loc);
@@ -190,6 +217,7 @@ class IslamicFinderProvider extends ChangeNotifier {
     await prefs.setString(_keyLocation, json.encode(loc.toJson()));
     notifyListeners();
     await _reloadPrayerAndPlaces();
+    _updateReloadAnchor(loc);
   }
 
   Future<void> setMadhab(Madhab madhab) async {
@@ -214,7 +242,8 @@ class IslamicFinderProvider extends ChangeNotifier {
 
   Future<void> _reloadPrayerAndPlaces() async {
     if (!_isValidLocation(_location)) return;
-    await Future.wait([_loadPrayerTimes(), _loadPlaces()]);
+    await _loadPrayerTimes();
+    await _loadPlaces();
   }
 
   Future<void> _loadPrayerTimes() async {
@@ -270,7 +299,10 @@ class IslamicFinderProvider extends ChangeNotifier {
 
   Future<List<LocationSearchResult>> searchLocations(String query) async {
     try {
-      return await _locationSearch.searchAddresses(query);
+      return await _locationSearch.searchAddresses(
+        query,
+        debounce: Duration.zero,
+      );
     } catch (e) {
       _queueToast(
         AppErrorMessages.from(e, context: FinderErrorContext.search),

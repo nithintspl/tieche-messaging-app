@@ -7,12 +7,12 @@ class MapsApiConfig {
 
   static const String geoapifyApiKey = String.fromEnvironment(
     'GEOAPIFY_API_KEY',
-    defaultValue: '',
+    defaultValue: 'e0a77673e3b144f1be9c94a9fe2d264e',
   );
 
   static const String tomtomApiKey = String.fromEnvironment(
     'TOMTOM_API_KEY',
-    defaultValue: '',
+    defaultValue: 'esUAEEEuOstCHl8Z7LUOrz3braPzywdN',
   );
 
   static bool get hasGeoapify => geoapifyApiKey.trim().isNotEmpty;
